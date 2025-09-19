@@ -55,9 +55,14 @@ bool is_quotated_word(std::string s)
 	return (s[0] == '"' && s[s.size() - 1] == '"') || (s[0] == '\'' && s[s.size() - 1] == '\'' );
 }
 
-void check_previous(Stack<KeyWord>&, KeyWord k)
+bool can_be_nest_in_empty(KeyWord k)
 {
+	return (k == Begin || k == Record || k == QuotationStart || k == QuotationEnd || k == CommentStart || k == CommentEnd);
+}
 
+bool skip(State s, KeyWord k)
+{
+	return (k == NotAKey || (s == InComment && k != CommentEnd) || (s == InQuotation && k != QuotationEnd && k != SingleQuotation));
 }
 
 KeyWord process_word(std::string s)
@@ -84,14 +89,12 @@ KeyWord process_word(std::string s)
 
 State process_state(KeyWord key_w, Stack<KeyWord>& stack, State state)
 {
-	KeyWord k;
+	if (skip(state, key_w)) return state;
 
+	if (!can_be_nest_in_empty(key_w) && stack.is_empty()) return Error;
 
-
-
-
-	if (key_w != CommentEnd && state == InComment) return state;
-	if ((key_w != QuotationEnd && key_w != SingleQuotation) && state == InQuotation) return state;
+	KeyWord prev;
+	if (!can_be_nest_in_empty(key_w)) prev = stack.pop();
 
 	switch (key_w)
 	{
@@ -99,56 +102,36 @@ State process_state(KeyWord key_w, Stack<KeyWord>& stack, State state)
 			if (!stack.is_empty()) return Error;
 			stack.push(key_w);
 			break;
-		case Repeat:
-			if (stack.is_empty()) return Error;
-			k = stack.pop();
-			if (k == Record || k == If) return Error;
-			stack.push(k);
-			stack.push(key_w);
-			break;
-		case Caseof:
-			if (stack.is_empty()) return Error;
-			k = stack.pop();
-			if (k == Record || k == If) return Error;
-			stack.push(k);
-			stack.push(key_w);
-			break;
 		case Begin:
-			if (!stack.is_empty()) 
+			if (!stack.is_empty())
 			{
-				k = stack.pop();
-				if (k == Record || k == If) return Error;
-				stack.push(k);
-				stack.push(key_w);
+				prev = stack.pop();
+				if (prev == Record || prev == If) return Error;
+				stack.push(prev, key_w);
 			}
 			else
 				stack.push(key_w);
 			break;
+		case Repeat:
+		case Caseof:
+		case If:
+			if (prev == Record || prev == If) return Error;
+			stack.push(prev, key_w);
+			break;
 		case Until:
-			if (stack.is_empty()) return Error;
-			k = stack.pop();
-			while (k == Then && !stack.is_empty()) k = stack.pop();
-			if (k != Repeat) return Error;
+			while (prev == Then && !stack.is_empty()) prev = stack.pop();
+			if (prev != Repeat) return Error;
 			break;
 		case End:
-			if (stack.is_empty()) return Error;
-			k = stack.pop();
-			while (k == Then && !stack.is_empty()) k = stack.pop();
-			if (!is_requieres_end(k)) return Error;
-			break;
-		case If:
-			if (stack.is_empty()) return Error;
-			k = stack.pop();
-			if (k == Record || k == If) return Error;
-			stack.push(k);
-			stack.push(key_w);
+			while (prev == Then && !stack.is_empty()) prev = stack.pop();
+			if (!is_requieres_end(prev)) return Error;
 			break;
 		case Then:
-			if (stack.is_empty() || stack.pop() != If) return Error;
+			if (prev != If) return Error;
 			stack.push(key_w);
 			break;
 		case Else:
-			if (stack.is_empty() || stack.pop() != Then) return Error;
+			if (prev != Then) return Error;
 		case SingleQuotation:
 			return (state == InQuotation) ? Normal : InQuotation;
 		case QuotationStart:
@@ -197,12 +180,12 @@ int main(int argc, char* argv[])
 	{
 		line_count++;
 		state = process_line(line, stack, state);
-		if (state == InQuotation) state = Normal;
 		if (state == Error) 
 		{
 			std::cout << "Найдена ошибка в строке номер: " << line_count << std::endl;
 			return 1;
 		}
+		if (state == InQuotation) state = Normal;
 	}
 
 	(stack.is_empty()) 

@@ -22,6 +22,12 @@ public:
 		top = node;
 	}
 
+	void push(T elm1, T elm2)
+	{
+		this->push(elm1);
+		this->push(elm2);
+	}
+
 	T pop()
 	{
 		StackNode* temp = top;
