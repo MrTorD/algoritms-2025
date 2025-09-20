@@ -65,6 +65,15 @@ bool skip(State s, KeyWord k)
 	return (k == NotAKey || (s == InComment && k != CommentEnd) || (s == InQuotation && k != QuotationEnd && k != SingleQuotation));
 }
 
+std::string to_lower(std::string s)
+{
+	for (int i{ 0 }; i < s.size(); i++)
+	{
+		s[i] = tolower(s[i]);
+	}
+	return s;
+}
+
 KeyWord process_word(std::string s)
 {
 	if (s[0] == '{' && s[s.size() - 1] == '}') return NotAKey;
@@ -74,15 +83,15 @@ KeyWord process_word(std::string s)
 	else if (is_quotated_word(s)) return NotAKey;
 	else if (s[0] == '"' || s[0] == '\'') return QuotationStart;
 	else if (s[s.size() - 1] == '"' || s[s.size() - 1] == '\'') return QuotationEnd;
-	else if (s == "REPEAT" || s == "repeat" || s == "Repeat") return Repeat;
-	else if (s == "UNTIL" || s == "until" || s == "Until") return Until;
-	else if (s == "RECORD" || s == "record" || s == "Record") return Record;
-	else if (s == "CASE" || s == "case" || s == "Case") return Caseof;
-	else if (s == "BEGIN" || s == "begin" || s == "Begin") return Begin;
-	else if (s == "END" || s == "end" || s == "End" || s == "END." || s == "END;" || s == "end." || s == "end;") return End;
-	else if (s == "IF" || s == "if" || s == "If") return If;
-	else if (s == "THEN" || s == "then" || s == "Then") return Then;
-	else if (s == "ELSE" || s == "else" || s == "Else") return Else;
+	else if (to_lower(s) == "repeat") return Repeat;
+	else if (to_lower(s) == "until") return Until;
+	else if (to_lower(s) == "record") return Record;
+	else if (to_lower(s) == "case") return Caseof;
+	else if (to_lower(s) == "begin") return Begin;
+	else if (to_lower(s) == "end" || to_lower(s) == "end;" || to_lower(s) == "end.") return End;
+	else if (to_lower(s) == "if") return If;
+	else if (to_lower(s) == "then") return Then;
+	else if (to_lower(s) == "else") return Else;
 
 	return NotAKey;
 }
