@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <fstream>
 
 Tree::Tree(std::istream& in)
 {
@@ -77,11 +78,6 @@ Tree::Tree(std::istream& in)
 	prevPointer = p;
 }
 
-void Tree::printOut(std::ostream& out)
-{
-	this->printOut(out, this->root, 0);
-}
-
 int Tree::printSons()
 {
 	int i{ 0 };
@@ -92,14 +88,13 @@ int Tree::printSons()
 	return i + 1;
 }
 
-void Tree::printOut(std::ostream& out, Tree::TreeNode* p, int level)
+void printOut(std::ostream& out, Tree::TreeNode* p, int level)
 {
 	for (int i = 0; i < level; i++)
 	{
 		out << '.';
 	}
 	out << p->value << '\n';
-	if (p->father != nullptr) out << "Отец для:" << p->value << ":" << p->father->value << '\n';
 	for (int i = 0; i < p->sons.size(); i++)
 	{
 		printOut(out, p->sons[i], p->sons[i]->level);
@@ -138,6 +133,7 @@ void Tree::createNode()
 	std::cin >> s;
 	TreeNode* p = new TreeNode;
 	p->value = s;
+	p->level = this->curNode->level + 1;
 	p->father = this->curNode;
 	this->curNode->sons.push_back(p);
 }
@@ -160,11 +156,7 @@ void Tree::deleteNode()
 {
 	int i{ 0 };
 
-	if (this->curNode == this->root)
-	{
-		std::cout << "Нельзя удалить корневую директорию\n";
-		return;
-	}
+	if (this->curNode == this->root) return;
 
 	for (i; i < this->curNode->father->sons.size(); i++)
 	{
@@ -201,3 +193,11 @@ void Tree::pasteNode()
 	this->curNode->sons.push_back(p);
 }
 
+void Tree::copyInFile()
+{
+	std::string s;
+	std::cout << "Введите название файла:\n";
+	std::cin >> s;
+	std::ofstream out(s);
+	printOut(out, this->root, 0);
+}

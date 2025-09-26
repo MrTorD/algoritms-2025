@@ -22,7 +22,6 @@ int main(int argc, char* argv[])
 {
 	SetConsoleOutputCP(1251);
 	std::ifstream in(argv[1]);
-	std::ofstream out(argv[2]);
 	std::string str;
 	Tree t{in}; 
 
@@ -40,9 +39,25 @@ int main(int argc, char* argv[])
 		std::cout << sonsCount << ". Создать директорию\n";
 		std::cout << sonsCount + 1 << ". Переименовать директорию\n";
 		std::cout << sonsCount + 2 << ". Скопировать директорию\n";
-		std::cout << sonsCount + 3 << ". Удалить директорию\n";
-		std::cout << sonsCount + 4 << ". Выход\n";
-		if (!t.emptyClipboard()) std::cout << sonsCount + 5 << ". Вставить\n";
+		std::cout << sonsCount + 3 << ". Скопировать в файл\n";
+		if (!t.inRoot() && !t.emptyClipboard())
+		{
+			std::cout << sonsCount + 4 << ". Вставить\n";
+			std::cout << sonsCount + 5 << ". Удалить директорию\n";
+			std::cout << sonsCount + 6 << ". Выход\n";
+		}
+		else if (!t.inRoot())
+		{
+			std::cout << sonsCount + 4 << ". Удалить директорию\n";
+			std::cout << sonsCount + 5 << ". Выход\n";
+		}
+		else if (!t.emptyClipboard())
+		{
+			std::cout << sonsCount + 4 << ". Вставить\n";
+			std::cout << sonsCount + 5 << ". Выход\n";
+		}
+		else 
+			std::cout << sonsCount + 4 << ". Выход\n";
 
 		std::cin >> answer;
 
@@ -51,8 +66,12 @@ int main(int argc, char* argv[])
 		else if (answer == sonsCount) t.createNode();
 		else if (answer == sonsCount + 1) t.renameNode();
 		else if (answer == sonsCount + 2) t.copyNode();
-		else if (answer == sonsCount + 3) t.deleteNode();
+		else if (answer == sonsCount + 3) t.copyInFile();
+		else if (answer == sonsCount + 4 && !t.emptyClipboard()) t.pasteNode();
+		else if (answer == sonsCount + 4 && !t.inRoot()) t.deleteNode();
 		else if (answer == sonsCount + 4) break;
-		else if (answer == sonsCount + 5 && !t.emptyClipboard()) t.pasteNode();
+		else if (answer == sonsCount + 5 && !t.emptyClipboard() && !t.inRoot()) t.deleteNode();
+		else if (answer == sonsCount + 5) break;
+		else if (answer == sonsCount + 6 && !t.emptyClipboard() && !t.inRoot()) break;
 	}
 }

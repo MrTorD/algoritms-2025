@@ -12,13 +12,13 @@ public:
 		std::vector<TreeNode*> sons;
 	};
 	Tree(std::istream& in);
-	void printOut(std::ostream& out);
 	void getUp();
 	void getDown(int sonCount);
 	void createNode();
 	void renameNode();
 	void deleteNode();
 	void copyNode();
+	void copyInFile();
 	void pasteNode();
 	int printSons();
 	bool inRoot();
@@ -28,7 +28,6 @@ private:
 	TreeNode* root = nullptr;
 	TreeNode* curNode = this->root;
 	TreeNode* clipboard = nullptr;
-	void printOut(std::ostream& out, Tree::TreeNode* p, int level);
 };
 
 
