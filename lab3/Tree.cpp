@@ -12,17 +12,9 @@ Tree::Tree(std::istream& in)
 	char c;
 
 	int levelCounter{ 0 };
+	int prevLevel{ -1 };
 
 	Tree::TreeNode* prevPointer = nullptr; 
-
-	std::getline(in, s);
-	Tree::TreeNode* p = new TreeNode;
-	p->value = s;
-	p->father = nullptr;
-	p->level = 0;
-	int prevLevel = 0;
-	prevPointer = p;
-	this->root = this->curNode = p;
 
 	while (!in.eof() && in.good())
 	{
@@ -30,52 +22,48 @@ Tree::Tree(std::istream& in)
 		do 
 		{
 			in.get(c);
-			
-			if (c == '.')
-			{
-				levelCounter++;
-			}
-			else
+
+			if (c != '.')
 			{
 				std::getline(in, s);
 				s = c + s;
 			}
-
+			else
+				levelCounter++;
+			
 		} while (c == '.');
 
 		Tree::TreeNode* p = new TreeNode;
 		p->value = s;
 		p->level = levelCounter;
 
+		if (prevLevel == -1)
+		{
+			p->father = nullptr;
+			this->root = prevPointer = this->curNode = p;
+			prevLevel = 0;
+			continue;
+		}
+
+		while (levelCounter < prevLevel)
+		{
+			prevPointer = prevPointer->father;
+			prevLevel = prevPointer->level;
+		}
+
 		if (levelCounter == prevLevel)
 		{
 			p->father = prevPointer->father;
-			
 			prevPointer->father->sons.push_back(p);
-			prevPointer = p;
 		} 
-		else if (levelCounter < prevLevel)
-		{
-			do
-			{
-				prevPointer = prevPointer->father;
-				prevLevel = prevPointer->level;
-			} while (levelCounter < prevLevel);
-
-			p->father = prevPointer->father;
-			prevPointer->father->sons.push_back(p);
-			prevLevel = levelCounter;
-			prevPointer = p;
-		}
 		else
 		{
 			prevPointer->sons.push_back(p);
 			p->father = prevPointer;
-			prevPointer = p;
-			prevLevel = levelCounter;
 		}
+		prevPointer = p;
+		prevLevel = levelCounter;
 	}
-	prevPointer = p;
 }
 
 int Tree::printSons()
