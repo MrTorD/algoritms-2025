@@ -16,25 +16,34 @@
 #include <iostream>
 #include <fstream>
 #include <Windows.h>
-#include "Tree.h"
+#include "FileManager.h"
+#include "ScreenHandler.h"
 #include <string>
 #include <conio.h>
 
 int main(int argc, char* argv[])
 {
+	if (argc != 2)
+	{
+		std::cout << "Передайте в качестве аргумента название файла, в котором записана структура в виде дерева.";
+		return 1;
+	}
+
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 	std::ifstream in(argv[1]);
-	Tree t{in}; 
+
+	FileManager* mng = new FileManager(in); 
+	ScreenHandler* screen = new ScreenHandler(mng, 30, 60);
 
 	std::string answer;
 	
 	while (!_kbhit())
 	{
 		system("cls");
-		t.printScreen();
+		screen->PrintScreen();
 
-		if(t.handleButton(_getch()))
+		if(mng->HandleButton(_getch()))
 			return 0;
 	}
 }

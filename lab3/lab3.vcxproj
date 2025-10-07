@@ -124,10 +124,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="lab3.cpp" />
-    <ClCompile Include="Tree.cpp" />
+    <ClCompile Include="FileManager.cpp" />
+    <ClCompile Include="ScreenHandler.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Tree.h" />
+    <ClInclude Include="FileManager.h" />
+    <ClInclude Include="ScreenHandler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
