@@ -21,7 +21,6 @@ public:
 		bool isCutting = false;
 	};
 
-	Node* root = nullptr;
 	Clipboard clipboard;
 	Node* curNode = this->root;
 	int curSonIndex = 0;
@@ -30,20 +29,22 @@ public:
 	bool HandleButton(int ch);
 	bool GetUp();
 	bool GetDown(int sonCount);
+	void PrintInFile();
+	void PasteNode();
+	bool CheckForNesting(Node* a, Node* b);
+	int PrintSons();
+	bool IsRoot();
+	bool EmptyClipboard();
+private:
+	Node* root = nullptr;
+
+	Node* Copy(Node* p, Node* father);
 	void CreateNode(bool isFile);
 	void RenameNode();
 	void DeleteNode(Node* p, bool isCutting);
 	void CopyNode(bool isCutting);
-	Node* Copy(Node* p, Node* father);
 	void PrintOut(std::ostream& output, Node* root, int level);
-	void PrintInFile();
-	void PasteNode();
-	bool CheckForNesting(Node* a, Node* b);
 	void DeleteSons(Node* p);
-	int PrintSons();
-	bool IsRoot();
-	bool EmptyClipboard();
-	std::string CurrentNode();
 };
 
 

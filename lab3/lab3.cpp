@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
 {
 	if (argc != 2)
 	{
-		std::cout << "Передайте в качестве аргумента название файла, в котором записана структура в виде дерева.";
+		std::cout << "Передайте в качестве аргумента название файла.";
 		return 1;
 	}
 
@@ -36,8 +36,6 @@ int main(int argc, char* argv[])
 	FileManager* mng = new FileManager(in); 
 	ScreenHandler* screen = new ScreenHandler(mng, 30, 60);
 
-	std::string answer;
-	
 	while (!_kbhit())
 	{
 		system("cls");

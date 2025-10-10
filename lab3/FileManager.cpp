@@ -126,11 +126,6 @@ bool FileManager::EmptyClipboard()
 	return clipboard.p == nullptr;
 }
 
-std::string FileManager::CurrentNode()
-{
-	return curNode->value;
-}
-
 void FileManager::CreateNode(bool isFile)
 {
 	std::string s;

@@ -31,9 +31,9 @@ void ScreenHandler::PrintLine(std::string leftStr, std::string rightStr, bool is
 	std::cout << "*";
 	(isArrow) ? std::cout << " -> " : std::cout << "    ";
 	std::cout << leftStr;
-	FillLineWithSpaces(leftStr.length() + 6, lSize);
+	FillLineWithSpaces((int)leftStr.length() + 6, lSize);
 	std::cout << "* " << rightStr;
-	FillLineWithSpaces(rightStr.length() + 2, rSize);
+	FillLineWithSpaces((int)rightStr.length() + 2, rSize);
 	std::cout << "*\n";
 }
 
@@ -113,8 +113,8 @@ void ScreenHandler::PrintScreen()
 	if (mng->curNode->sons.size() != 0)
 	{
 		sNum = (mng->curNode->sons.size() > mng->curNode->sons.at(mng->curSonIndex)->sons.size())
-			? mng->curNode->sons.size()
-			: mng->curNode->sons.at(mng->curSonIndex)->sons.size();
+			? (int)mng->curNode->sons.size()
+			: (int)mng->curNode->sons.at(mng->curSonIndex)->sons.size();
 	}
 	else
 	{
