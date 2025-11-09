@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <Windows.h>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -23,7 +24,6 @@
 
 
 using AdjacencyMatrix = std::vector<std::vector<int>>;
-using OperationsInfo = std::map<int, std::pair<int, int>>;
 
 const int NO_EDGE = 0;
 const int INF = INT_MAX;
@@ -35,34 +35,61 @@ enum VertexState
 	Black //Полностью обработанные
 };
 
+struct Operation 
+{
+	int index;
+	int name;
+	std::string type;
+	int time;
+	int maxWay;
+	int start = INF;
+	int end = INF;
+};
+
 struct Graph
 {
 	AdjacencyMatrix matrix;
-	std::vector<int> maxWays;
-	std::vector<int> time;
-	std::vector<std::string> types;
+	std::vector<Operation> operations;
 	std::map<std::string, std::vector<std::pair<int, int>>> machineStatuses;
 };
 
-std::ostream& operator << (std::ostream& out, std::stack<int> stack)
+std::ostream& PrintCycle (std::ostream& out, std::stack<int> stack, std::vector<Operation> ops)
 {
 	while (stack.size() != 0)
 	{
-		out << stack.top() + 1 << " ";
+		int index = stack.top();
+		auto op = std::find_if(ops.begin(), ops.end(), [index](const Operation& op)
+			{
+				return op.index == index;
+			});
+		out << op->name << " ";
 		stack.pop();
 	}
+	out << "\n";
 	return out;
 }
 
-std::ostream& PrintOperations(std::ostream& out, OperationsInfo operations, std::vector<std::string> types)
+std::ostream& PrintOperations(std::ostream& out, const std::map<int, Operation>& completed)
 {
-	out << "График выполнения операций\n  N        Тип                Время\n";
-	for (auto operation : operations)
+
+	std::map<int, Operation> nameSort;
+
+	for (const auto& op : completed)
 	{
-		std::string margin(20 - types[operation.first].length(), ' ');
-		out << "  " << operation.first << "      " << types[operation.first] << margin << operation.second.first << " " << operation.second.second << "\n";
+		nameSort[op.second.name] = op.second;
 	}
-	std::cout << "\n";
+
+	out << std::left;
+	out << "  График выполнения операций \n";
+	out << "    N       Тип              Время\n";
+
+	for (const auto& op : nameSort)
+	{
+		out << "    " << std::setw(5) << op.second.name << std::setw(20) << op.second.type << op.second.start << " " << op.second.end << "\n";
+	}
+
+	out << "\n";
+
 	return out;
 }
 
@@ -88,67 +115,46 @@ std::ostream& PrintMachines(std::ostream& out, std::map<std::string, std::vector
 	return out;
 }
 
-std::ostream& operator << (std::ostream& out, std::vector<int> vector)
-{
-	for (auto elm : vector)
-	{
-		out << elm << " ";
-	}
-	return out;
-}
-
-std::ostream& operator << (std::ostream& out, Graph graph)
-{
-	int size = graph.matrix.size();
-
-	out << "Продолжительности:  " << graph.time << "\n";
-
-	out << "Типы: ";
-	for (auto type : graph.types)
-	{
-		out << type << " ";
-	}
-	out << "\n";
-
-	out << "Максимальные пути: " << graph.maxWays << "\n";
-
-	out << "Матрица смежности:\n";
-	for (int i = 0; i < size; i++)
-	{
-		for (int j = 0; j < size; j++)
-		{
-			out << graph.matrix[i][j] << " ";
-		}
-		out << "\n";
-	}
-	return out;
-}
-
 Graph CreateGraph(std::ifstream& operations, std::ifstream& edges)
 {
 	Graph graph;
+
 	std::string type;
+	int name;
 	int time;
-	while (operations >> type >> time)
+	for (int i = 0; operations >> name >> type >> time; i++)
 	{
-		graph.types.push_back(type);
+		Operation op{ i, name, type, time, 0 };
+		graph.operations.push_back(op);
 		if (!graph.machineStatuses.count(type))
 			graph.machineStatuses[type] = std::vector<std::pair<int, int>>{ {0, 0} };
-		graph.time.push_back(time);
 	}
-	graph.matrix = AdjacencyMatrix(graph.types.size(), std::vector<int>(graph.types.size(), NO_EDGE));
+
+	graph.matrix = AdjacencyMatrix(graph.operations.size(), std::vector<int>(graph.operations.size(), NO_EDGE));
 
 	int from;
 	int to;
 	while (edges >> from >> to) 
 	{
-		if (from > graph.matrix.size() || to > graph.matrix.size() || from < 1 || to < 1)
-			std::cout << "Некорректное ребро: из " << from << " в " << to << "\n";
+		auto itFrom = std::find_if(graph.operations.begin(), graph.operations.end(),
+			[from](const Operation& op)
+			{
+					return op.name == from; 
+			});
+		auto itTo = std::find_if(graph.operations.begin(), graph.operations.end(),
+			[to](const Operation& op)
+			{
+				return op.name == to;
+			});
+
+		if (itFrom == graph.operations.end() || itTo == graph.operations.end())
+		{
+			std::cout << "Некорректное ребро из " << from << " в " << to << "\n";
+		}
 		else
-			graph.matrix[from - 1][to - 1] = 1; ///СДВИГ!!!
+			graph.matrix[itFrom->index][itTo->index] = 1;
 	}
 
-	graph.maxWays = std::vector<int>(graph.types.size(), 0);
 	return graph;
 }
 
@@ -156,11 +162,11 @@ Graph SortTopologically(Graph& graph, std::vector<int>& order)
 {
 	Graph sortedGraph = graph;
 
-	int size = graph.types.size();
+	int size = graph.operations.size();
 	for (int i = 0; i < size; i++)
 	{
-		sortedGraph.time[i] = graph.time[order[size - 1 - i]];
-		sortedGraph.types[i] = graph.types[order[size - 1 - i]];
+		sortedGraph.operations[i] = graph.operations[order[size - 1 - i]];
+		sortedGraph.operations[i].index = i;
 
 		for (int j = 0; j < size; j++)
 		{
@@ -174,9 +180,9 @@ Graph SortTopologically(Graph& graph, std::vector<int>& order)
 		for (int j = size - 1; j >= 0; j--)
 		{
 			if (sortedGraph.matrix[i][j] != NO_EDGE)
-				childrenMaxWay = (std::max)(childrenMaxWay, sortedGraph.maxWays[j]);
+				childrenMaxWay = (std::max)(childrenMaxWay, sortedGraph.operations[j].maxWay);
 		}
-		sortedGraph.maxWays[i] = sortedGraph.time[i] + childrenMaxWay;
+		sortedGraph.operations[i].maxWay = sortedGraph.operations[i].time + childrenMaxWay;
 	}
 	return sortedGraph;
 }
@@ -218,69 +224,76 @@ bool GetTopolicalOrder(AdjacencyMatrix& adjMatrix, std::vector<int>& topological
 	return true;
 }
 
-void UpdateAvalible(AdjacencyMatrix& matrix, OperationsInfo& avalible, OperationsInfo& completed)
+void UpdateAvalible(Graph& graph, std::map<int, Operation>& avalible, std::map<int, Operation>& completed, std::map<int, Operation>& inProgress)
 {
-	for (int i = 0; i < matrix.size(); i++)
+	for (int i = 0; i < graph.matrix.size(); i++)
 	{
-		bool hasUncompletedParents = false;
-
-		if (avalible.count(i) || completed.count(i)) 
+		if (avalible.count(i) || completed.count(i) || inProgress.count(i))
 			continue;
 
-		for (int j = 0; j < matrix.size(); j++)
+		bool hasUncompletedParents = false;
+
+		for (int j = 0; j < graph.matrix.size(); j++)
 		{
-			if (matrix[j][i] && !completed.count(j))
+			if (graph.matrix[j][i] && !completed.count(j))
 			{
 				hasUncompletedParents = true;
 				break;
 			}
 		}
-
 		if (!hasUncompletedParents)
-			avalible[i] = { INF, INF };
+			avalible[i] = graph.operations[i];
 	}
 }
 
-void UpdateCompleted(AdjacencyMatrix&, int time, OperationsInfo& avalible, OperationsInfo& completed)
+void UpdateCompleted(int time, std::map<int, Operation>& completed, std::map<int, Operation>& inProgress)
 {
-	for (auto it = avalible.begin(); it != avalible.end(); ) {
-		if (time >= it->second.second) {
+	for ( auto it = inProgress.begin(); it != inProgress.end(); )
+	{
+		if (time >= it->second.end)
+		{
 			completed[it->first] = it->second;
-			it = avalible.erase(it);
+			it = inProgress.erase(it);
 		}
 		else
 			++it;
 	}
 }
 
-int FindPriorityOperation(Graph graph, std::string type, OperationsInfo& avalible, OperationsInfo& completed)
+int FindNextOperationId(const Graph& graph, std::string type, std::map<int, Operation>& avalible)
 {
-	int maxPriorityOperation = -INF;
+	int maxPriorityOperationId = -INF;
 	int priority = -INF;
-	for (const auto& operation : avalible)
+	for (const auto& operationInfo : avalible)
 	{
-		if (type == graph.types[operation.first] && graph.maxWays[operation.first] > priority)
+		if (type == operationInfo.second.type && operationInfo.second.maxWay > priority)
 		{
-			maxPriorityOperation = operation.first;
-			priority = graph.maxWays[operation.first];
+			maxPriorityOperationId = operationInfo.first;
+			priority = operationInfo.second.maxWay;
 		}
 	}
-	return maxPriorityOperation;
+	return maxPriorityOperationId;
 }
 
-int HandleMachines(Graph& graph, int& time, OperationsInfo& avalible, OperationsInfo& completed)
+int HandleMachines(Graph& graph, int& time, std::map<int, Operation>& avalible, std::map<int, Operation>& inProgress)
 {
 	int newTime = INF;
 	for (auto& machine : graph.machineStatuses)
 	{
 		if (machine.second.back().second <= time) //Время завершения последней операции на станке
 		{
-			int operation = FindPriorityOperation(graph, machine.first, avalible, completed);
-			if (operation != -INF)
+			int id = FindNextOperationId(graph, machine.first, avalible);
+			if (id != -INF)
 			{
-				avalible[operation] = { time, time + graph.time[operation] };
-				machine.second.push_back({ time, time + graph.time[operation] });
-				newTime = (std::min)(newTime, time + graph.time[operation]);
+				Operation op = avalible.at(id);
+				avalible.erase(id);
+
+				op.start = time;
+				op.end = time + op.time;
+				inProgress[id] = op;
+
+				machine.second.push_back({ time, time + op.time });
+				newTime = (std::min)(newTime, time + op.time);
 			}
 		}
 	}
@@ -291,16 +304,20 @@ int StartSimulation(Graph& graph)
 {
 	int time = 0;
 
-	OperationsInfo completed;
-	OperationsInfo avalible;
+	std::map<int, Operation> completed;
+	std::map<int, Operation> avalible;
+	std::map<int, Operation> inProgress;
+
+	int ITERATIONS = 0;
 
 	while (completed.size() != graph.matrix.size())
 	{
-		UpdateCompleted(graph.matrix, time, avalible, completed);
-		UpdateAvalible(graph.matrix, avalible, completed);
-		time = HandleMachines(graph, time, avalible, completed);
+		UpdateCompleted(time, completed, inProgress);
+		UpdateAvalible(graph, avalible, completed, inProgress);
+		time = HandleMachines(graph, time, avalible, inProgress);
 	}
-	PrintOperations(std::cout, completed, graph.types);
+
+	PrintOperations(std::cout, completed);
 	PrintMachines(std::cout, graph.machineStatuses);
 
 	return time - 1;
@@ -320,19 +337,17 @@ int main(int argc, char* argv[])
 	std::ifstream edges(argv[2]);
 
 	Graph graph = CreateGraph(operations, edges);
-	std::cout << "Начальный граф:\n" << graph << "\n";
 	std::stack<int> cycle;
 	std::vector<int> topologicalOrder;
 
 	if (!GetTopolicalOrder(graph.matrix, topologicalOrder, cycle))
 	{
-		std::cout << "Найден цикл: " << cycle << "\n";
+		std::cout << "Найден цикл: ";
+		PrintCycle(std::cout, cycle, graph.operations);
 		return 1;
 	}
 
 	graph = SortTopologically(graph, topologicalOrder);
-
-	std::cout << "Отсортированный граф:\n" << graph << "\n";
 
 	int totalTime = StartSimulation(graph);
 
