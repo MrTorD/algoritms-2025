@@ -10,25 +10,20 @@ BTree::BTree(int level)
     root->values = std::vector<int>(level - 1, BTree::INF);
 }
 
-std::vector<int> BTree::insertValue(std::vector<int> values, int value)
+void BTree::insertValue(std::vector<int>& values, int value)
 {
     int index = 0;
-    while (index < values.size() && values[index] < value)
-    {
-        index++;
-    }
+    auto it = std::lower_bound(values.begin(), values.end(), value);
+    index = std::distance(values.begin(), it);
 
     for (int i = values.size() - 2; i >= index; i--)
     {
         values[i + 1] = values[i];
     }
-
     values[index] = value;
-
-    return values;
 }
 
-std::vector<int> BTree::copyValuesPart(std::vector<int> values, int from, int to)
+std::vector<int> BTree::copyValuesPart(const std::vector<int>& values, int from, int to)
 {
     std::vector<int> newValues(level - 1, BTree::INF);
     for (int i = 0; i < to - from + 1; i++)
@@ -38,7 +33,7 @@ std::vector<int> BTree::copyValuesPart(std::vector<int> values, int from, int to
     return newValues;
 }
 
-std::vector<BTree::Node*> BTree::copySonsPart(std::vector<BTree::Node*> sons, int from, int to)
+std::vector<BTree::Node*> BTree::copySonsPart(const std::vector<BTree::Node*>& sons, int from, int to)
 {
     std::vector<BTree::Node*> newSons(level, nullptr);
     for (int i = 0; i < to - from + 1; i++)
@@ -74,14 +69,14 @@ std::pair<int, BTree::Node*> BTree::recursiveInsert(Node* node, int value)
     {
         if (node->values.back() == INF) //Лист не переполнен
         {
-            node->values = insertValue(node->values, value);
+            insertValue(node->values, value);
             return { INF, nullptr };
         }
         else // Лист переполнен
         {
             std::vector<int> extraValues = node->values;
             extraValues.push_back(INF);
-            extraValues = insertValue(extraValues, value);
+            insertValue(extraValues, value);
             int middle = extraValues[level / 2];
             Node* newRightChild = new Node;
             newRightChild->sons = std::vector<Node*>(level, nullptr);
@@ -106,7 +101,7 @@ std::pair<int, BTree::Node*> BTree::recursiveInsert(Node* node, int value)
 
         if (node->values.back() == INF)
         {
-            node->values = insertValue(node->values, middle);
+            insertValue(node->values, middle);
 
             for (int i = node->sons.size() - 2; i > index; i--) 
             {
@@ -124,7 +119,7 @@ std::pair<int, BTree::Node*> BTree::recursiveInsert(Node* node, int value)
             extraValues.push_back(INF);
             extraSons.push_back(nullptr);
 
-            extraValues = insertValue(extraValues, middle);
+            insertValue(extraValues, middle);
             for (int i = level - 1; i > index; i--)
             {
                 extraSons[i + 1] = extraSons[i];

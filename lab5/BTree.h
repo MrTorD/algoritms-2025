@@ -22,9 +22,9 @@ private:
 	Node* root;
 	int level;
 	
-	std::vector<Node*> copySonsPart(std::vector<Node*> sons, int from, int to);
-	std::vector<int> copyValuesPart(std::vector<int> values, int from, int to);
-	std::vector<int> insertValue(std::vector<int> values, int value);
+	std::vector<Node*> copySonsPart(const std::vector<Node*>& sons, int from, int to);
+	std::vector<int> copyValuesPart(const std::vector<int>& values, int from, int to);
+	void insertValue(std::vector<int>& values, int value);
 	std::pair<int, Node*> recursiveInsert(Node* node, int value);
 	bool recursiveFind(Node* node, int nodeValue);
 };

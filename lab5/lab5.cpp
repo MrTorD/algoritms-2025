@@ -12,7 +12,8 @@
 #include <random>
 #include <chrono>
 
-const int NUMBERS_COUNT = 5000000;
+const bool GENERATE_NUMBERS = false;
+const int NUMBERS_COUNT = 50000000;
 const std::string NUMBERS_FILE_NAME = "5_numbers.txt";
 
 void generateShuffled(int count, std::string outName) {
@@ -38,9 +39,12 @@ int main()
     SetConsoleCP(1251);
     SetConsoleOutputCP(1251);
 
-    std::cout << "Генерация чисел...";
-    generateShuffled(NUMBERS_COUNT, NUMBERS_FILE_NAME);
-    system("cls");
+    if (GENERATE_NUMBERS)
+    {
+        std::cout << "Генерация чисел...";
+        generateShuffled(NUMBERS_COUNT, NUMBERS_FILE_NAME);
+        system("cls");
+    }
 
     std::cout << "Введите порядок дерева и название входного файла с числами\n";
     int level;
