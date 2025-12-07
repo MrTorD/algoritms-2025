@@ -189,7 +189,7 @@ void BTree::recursivePrintValues(std::ostream& out, Node* node)
         return;
 
     int i = 0;
-    while (i < (level * 2 - 1) && node->records[i].first != INF)
+    while (i < level - 1 && node->records[i].first != INF)
     {
         if (node->sons[i] != nullptr)
             recursivePrintValues(out, node->sons[i]);

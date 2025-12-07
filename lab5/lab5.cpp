@@ -67,6 +67,8 @@ int main()
         tree.insert(key, value);
     }
 
+    in.close();
+
     while (true)
     {
         system("cls");
@@ -131,9 +133,9 @@ int main()
         }
         case '4':
         {
-            std::ofstream in(inName);
-            tree.printValues(in);
-            in.close();
+            std::ofstream out(inName);
+            tree.printValues(out);
+            out.close();
             break;
         }
         case '5':
