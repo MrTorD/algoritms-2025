@@ -4,36 +4,41 @@
 
 BTree::BTree(int level)
 {
-    this->level = level;
+    this->level = level * 2;
     root = new Node;
-    root->sons = std::vector<Node*>(level, nullptr);
-    root->values = std::vector<int>(level - 1, BTree::INF);
+    root->sons = std::vector<Node*>(this->level, nullptr);
+    root->records = std::vector<std::pair<int, std::string>>(this->level - 1, { BTree::INF, ""});
 }
 
-void BTree::insertValue(std::vector<int>& values, int value)
+void BTree::insertRecord(std::vector<Record>& records, Record& record)
 {
     int index = 0;
-    auto it = std::lower_bound(values.begin(), values.end(), value);
-    index = std::distance(values.begin(), it);
+    auto it = std::lower_bound(records.begin(), records.end(), record,
+        [](const std::pair<int, std::string>& a, const std::pair<int, std::string>& b)
+        { 
+            return a.first < b.first; 
+        }
+    );
+    index = std::distance(records.begin(), it);
 
-    for (int i = values.size() - 2; i >= index; i--)
+    for (int i = records.size() - 2; i >= index; i--)
     {
-        values[i + 1] = values[i];
+        records[i + 1] = records[i];
     }
-    values[index] = value;
+    records[index] = record;
 }
 
-std::vector<int> BTree::copyValuesPart(const std::vector<int>& values, int from, int to)
+std::vector<Record> BTree::copyRecordsPartly(const std::vector<Record>& records, int from, int to)
 {
-    std::vector<int> newValues(level - 1, BTree::INF);
+    std::vector<Record> newRecords(level - 1, { INF, ""});
     for (int i = 0; i < to - from + 1; i++)
     {
-        newValues[i] = values[from + i];
+        newRecords[i] = records[from + i];
     }
-    return newValues;
+    return newRecords;
 }
 
-std::vector<BTree::Node*> BTree::copySonsPart(const std::vector<BTree::Node*>& sons, int from, int to)
+std::vector<BTree::Node*> BTree::copySonsPartly(const std::vector<BTree::Node*>& sons, int from, int to)
 {
     std::vector<BTree::Node*> newSons(level, nullptr);
     for (int i = 0; i < to - from + 1; i++)
@@ -43,65 +48,66 @@ std::vector<BTree::Node*> BTree::copySonsPart(const std::vector<BTree::Node*>& s
     return newSons;
 }
 
-void BTree::insert(int value)
+void BTree::insert(int key, std::string value)
 {
-    if (BTree::find(value))
+    if (BTree::find(key))
     {
-        std::cout << "Ключ " << value << " уже существует. Он не будет добавлен\n";
+        std::cout << "Ключ " << key << " уже существует. Он не будет добавлен\n";
         return;
     }
-    auto result = BTree::recursiveInsert(root, value);
-    if (result.first != INF)
+    Record record{ key, value };
+    auto result = BTree::recursiveInsert(root, record);
+    if (result.first.first != INF)
     {
         Node* newRoot = new Node;
         newRoot->sons = std::vector<Node*>(level, nullptr);
-        newRoot->values = std::vector<int>(level - 1, INF);
+        newRoot->records = std::vector<Record>(level - 1, { INF, ""});
         newRoot->sons[0] = root;
         newRoot->sons[1] = result.second;
-        newRoot->values[0] = result.first;
+        newRoot->records[0] = result.first;
         root = newRoot;
     }
 }
 
-std::pair<int, BTree::Node*> BTree::recursiveInsert(Node* node, int value)
+std::pair<Record, BTree::Node*> BTree::recursiveInsert(Node* node, Record& record)
 {
     if (node->sons[0] == nullptr) //Вставка в лист
     {
-        if (node->values.back() == INF) //Лист не переполнен
+        if (node->records.back().first == INF) //Лист не переполнен
         {
-            insertValue(node->values, value);
-            return { INF, nullptr };
+            insertRecord(node->records, record);
+            return { { INF, "" }, nullptr };
         }
         else // Лист переполнен
         {
-            std::vector<int> extraValues = node->values;
-            extraValues.push_back(INF);
-            insertValue(extraValues, value);
-            int middle = extraValues[level / 2];
-            Node* newRightChild = new Node;
+            std::vector<Record> extraRecords = node->records;
+            extraRecords.push_back({ INF, ""});
+            insertRecord(extraRecords, record);
+            auto middle = extraRecords[level / 2];
+            auto newRightChild = new Node;
             newRightChild->sons = std::vector<Node*>(level, nullptr);
-            node->values = copyValuesPart(extraValues, 0, level / 2 - 1);
-            newRightChild->values = copyValuesPart(extraValues, level / 2 + 1, level - 1);
+            node->records = copyRecordsPartly(extraRecords, 0, level / 2 - 1);
+            newRightChild->records = copyRecordsPartly(extraRecords, level / 2 + 1, level - 1);
             return { middle, newRightChild };
         }
     }
     else //Вставка не в лист
     {
         int index = 0;
-        while (index < level - 1 && node->values[index] != INF && node->values[index] < value)
+        while (index < level - 1 && node->records[index].first != INF && node->records[index].first < record.first)
         {
             index++;
         }
         
-        auto result = recursiveInsert(node->sons[index], value);
-        int middle = result.first;
-        if (middle == INF)
-            return { INF, nullptr };
+        auto result = recursiveInsert(node->sons[index], record);
+        Record middle = result.first;
+        if (middle.first == INF)
+            return { { INF, "" }, nullptr};
         Node* rightChild = result.second;
 
-        if (node->values.back() == INF)
+        if (node->records.back().first == INF)
         {
-            insertValue(node->values, middle);
+            insertRecord(node->records, middle);
 
             for (int i = node->sons.size() - 2; i > index; i--) 
             {
@@ -109,72 +115,92 @@ std::pair<int, BTree::Node*> BTree::recursiveInsert(Node* node, int value)
             }
             node->sons[index + 1] = rightChild;
 
-            return { INF, nullptr };
+            return { { INF, "" }, nullptr};
         }
         else 
         {
-            std::vector<int> extraValues = node->values;
+            std::vector<Record> extraRecords = node->records;
             std::vector<Node*> extraSons = node->sons;
             
-            extraValues.push_back(INF);
+            extraRecords.push_back({ INF, ""});
             extraSons.push_back(nullptr);
 
-            insertValue(extraValues, middle);
+            insertRecord(extraRecords, middle);
             for (int i = level - 1; i > index; i--)
             {
                 extraSons[i + 1] = extraSons[i];
             }
             extraSons[index + 1] = rightChild;
 
-            int middle = extraValues[level / 2];
+            Record middle = extraRecords[level / 2];
 
             Node* newRightChild = new Node;
             newRightChild->sons = std::vector<Node*>(level, nullptr);
-            newRightChild->values = std::vector<int>(level - 1, INF);
+            newRightChild->records = std::vector<Record>(level - 1, { INF, ""});
 
-            node->values = copyValuesPart(extraValues, 0, level / 2 - 1);
-            newRightChild->values = copyValuesPart(extraValues, level / 2 + 1, level - 1);
+            node->records = copyRecordsPartly(extraRecords, 0, level / 2 - 1);
+            newRightChild->records = copyRecordsPartly(extraRecords, level / 2 + 1, level - 1);
 
-            node->sons = copySonsPart(extraSons, 0, level / 2);
-            newRightChild->sons = copySonsPart(extraSons, level / 2 + 1, level);
+            node->sons = copySonsPartly(extraSons, 0, level / 2);
+            newRightChild->sons = copySonsPartly(extraSons, level / 2 + 1, level);
 
             return { middle, newRightChild };
         }
     }
 }
 
-void BTree::print(std::ostream& out)
+void BTree::printStructure(std::ostream& out)
 {
-    std::queue<Node*> q;
-    q.push(root);
+    recursivePrintStructure(out, root, 0);
+}
 
-    while (!q.empty())
+void BTree::printValues(std::ostream& out)
+{
+    recursivePrintValues(out, root);
+}
+
+void BTree::recursivePrintStructure(std::ostream& out, BTree::Node* node, int level)
+{
+    for (int i = 0; i < level; i++)
     {
-        int size = q.size();
-
-        for (int i = 0; i < size; i++)
-        {
-            Node* node = q.front();
-            q.pop();
-
-            out << "[";
-            for (auto value : node->values)
-            {
-                if (value == INF)
-                    break;
-                out << value << " ";
-            }
-            out << "]";
-
-            for (auto son : node->sons)
-            {
-                if (son == nullptr)
-                    break;
-                q.push(son);
-            }
-        }
-        out << "\n";
+        out << "-";
     }
+
+    out << "[";
+    for (auto record : node->records)
+    {
+        if (record.first == INF)
+            break;
+        out << record.first << " ";
+    }
+    out << "]\n";
+
+    for (auto son : node->sons)
+    {
+        if (son == nullptr)
+            break;
+        recursivePrintStructure(out, son, level + 1);
+    }
+}
+
+void BTree::recursivePrintValues(std::ostream& out, Node* node)
+{
+    if (node == nullptr)
+        return;
+
+    int i = 0;
+    while (i < (level * 2 - 1) && node->records[i].first != INF)
+    {
+        if (node->sons[i] != nullptr)
+            recursivePrintValues(out, node->sons[i]);
+
+        out << node->records[i].first << " " << node->records[i].second << "\n";
+
+        i++; 
+    }
+
+    if (node->sons[i] != nullptr)
+        recursivePrintValues(out, node->sons[i]);
 }
 
 bool BTree::find(int value)
@@ -182,24 +208,25 @@ bool BTree::find(int value)
     return BTree::recursiveFind(root, value);
 }
 
-bool BTree::recursiveFind(BTree::Node* node, int value)
+bool BTree::recursiveFind(BTree::Node* node, int key)
 {
     if (node == nullptr)
         return false;
 
     int index = 0;
-    while (index < level - 1 && node->values[index] != INF && node->values[index] < value)
+    while (index < level - 1 && node->records[index].first != INF && node->records[index].first < key)
     {
         index++;
     }
 
-    if (index < level - 1 && node->values[index] == value)
+    if (index < level - 1 && node->records[index].first == key)
     {
+        std::cout << "Значение по ключу: " << node->records[index].second << "\n";
         return true;
     }
 
     if (node->sons[index] != nullptr)
-        return recursiveFind(node->sons[index], value);
+        return recursiveFind(node->sons[index], key);
     else
         return false;
 }

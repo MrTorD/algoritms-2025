@@ -61,66 +61,81 @@ int main()
     BTree tree(level);
 
     int key;
-    while (in >> key)
+    std::string value;
+    while (in >> key >> value)
     {
-        tree.insert(key);
+        tree.insert(key, value);
     }
 
     while (true)
     {
         system("cls");
-        std::cout << "Введите:\n";
 
-        std::cout << "1. Вывести Б-дерево в консоль\n";
-        std::cout << "2. Вывести Б-дерево в файл\n";
-        std::cout << "3. Добавить ключ\n";
-        std::cout << "4. Найти ключ\n";
+        tree.printStructure(std::cout);
+
+        std::cout << "\nВведите:\n";
+        std::cout << "1. Вывысти Б-дерево в файл\n";
+        std::cout << "2. Добавить ключ\n";
+        std::cout << "3. Найти ключ\n";
+        std::cout << "4. Сохранить в файл\n";
         std::cout << "5. Выход\n";
 
         int ch = _getch();
 
-        int num;
         switch (ch)
         {
         case '1':
-            system("cls");
-            tree.print(std::cout);
-            std::cout << "Нажмите любую клавишу для продолжения...";
-            _getch();
-            break;
-        case '2':
         {
+            std::cin.clear();
+            std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
             system("cls");
             std::cout << "Введите название файла и нажмите Enter\n";
             std::string outName;
             std::cin >> outName;
             std::ofstream out(outName);
-            tree.print(out);
+            tree.printStructure(out);
             out.close();
             break;
         }
-        case '3':
+        case '2':
+        {
+            std::cin.clear();
+            std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+            int key;
+            std::string value;
             system("cls");
             std::cout << "Введите число и нажмите Enter\n";
-            std::cin >> num;
-            tree.insert(num);            
+            std::cin >> key;
+            std::cout << "Введите значение и нажмите Enter\n";
+            std::cin >> value;
+            tree.insert(key, value);
             std::cout << "Нажмите любую клавишу для продолжения...";
             _getch();
             break;
-        case '4':
+        }
+        case '3':
+        {
+            std::cin.clear();
+            std::cin.ignore((std::numeric_limits<std::streamsize>::max)(), '\n');
+            int key;
             system("cls");
-            std::cout << "Введите число и нажмите Enter\n";
-            std::cin >> num;
+            std::cout << "Введите ключ и нажмите Enter\n";
+            std::cin >> key;
 
-            if (tree.find(num)) {
-                std::cout << "Ключ найден\n";
-            }
-            else {
+            if (!tree.find(key)) {
                 std::cout << "Ключ не найден\n";
             }
             std::cout << "Нажмите любую клавишу для продолжения...";
             _getch();
             break;
+        }
+        case '4':
+        {
+            std::ofstream in(inName);
+            tree.printValues(in);
+            in.close();
+            break;
+        }
         case '5':
             return 0; 
         }

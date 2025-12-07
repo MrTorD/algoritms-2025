@@ -3,17 +3,20 @@
 #include <vector>
 #include <iostream>
 
+using Record = std::pair<int, std::string>;
+
 class BTree
 {
 public:
 	BTree(int level);
-	void insert(int value);
-	void print(std::ostream& out);
-	bool find(int nodeValue);
+	void insert(int key, std::string value);
+	void printStructure(std::ostream& out);
+	void printValues(std::ostream& out);
+	bool find(int key);
 private:
 	struct Node
 	{
-		std::vector<int> values;
+		std::vector<Record> records;
 		std::vector<Node*> sons;
 	};
 
@@ -22,10 +25,12 @@ private:
 	Node* root;
 	int level;
 	
-	std::vector<Node*> copySonsPart(const std::vector<Node*>& sons, int from, int to);
-	std::vector<int> copyValuesPart(const std::vector<int>& values, int from, int to);
-	void insertValue(std::vector<int>& values, int value);
-	std::pair<int, Node*> recursiveInsert(Node* node, int value);
-	bool recursiveFind(Node* node, int nodeValue);
+	std::vector<Node*> copySonsPartly(const std::vector<Node*>& sons, int from, int to);
+	std::vector<Record> copyRecordsPartly(const std::vector<Record>& records, int from, int to);
+	void insertRecord(std::vector<Record>& records, Record& record);
+	std::pair<Record, Node*> recursiveInsert(Node* node, Record& record);
+	bool recursiveFind(Node* node, int key);
+	void recursivePrintStructure(std::ostream& out, Node* node, int level);
+	void recursivePrintValues(std::ostream& out, Node* node);
 };
 
